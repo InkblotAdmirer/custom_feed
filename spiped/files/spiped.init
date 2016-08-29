@@ -1,0 +1,60 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+
+. /lib/functions.sh
+
+NAME=spiped
+
+BIN=/usr/sbin/spiped
+
+DEBUG='0'
+
+start() {
+
+	config_load "${NAME}"
+	config_foreach spiped_instance
+
+}
+
+spiped_instance() {
+
+	local TEST="$1"
+
+	config_get KEYFILE "$1" key_file
+	config_get SIP "$1" source_ip
+	config_get SP "$1" source_port
+	config_get TIP "$1" target_ip
+	config_get TP "$1" target_port
+	config_get ENABLED "$1" enabled
+	config_get MODE "$1" mode
+
+	[ "$ENABLED" -eq '1' ] && {
+		# Generate key if none present and instance enabled -- keyfile thus can be unique per spiped instance
+		[ -s $KEYFILE ] || keygen
+
+		# set switch for encrypt if client or decrypt if server
+		[ "$MODE" = "server" ] && MODEFLAG="-d"
+		[ "$MODE" = "client" ] && MODEFLAG="-e"
+	
+		SERVICE_STRING="$BIN $MODEFLAG -s [$SIP]:$SP -t [$TIP]:$TP -k $KEYFILE"
+
+		[ "$DEBUG" -eq '0' ] && service_start $SERVICE_STRING
+		[ "$DEBUG" -eq '0' ] && logger -t $NAME "Starting spiped instance: $MODE S-$SIP:$SP T-$TIP:$TP $KEYFILE"
+		[ "$DEBUG" -eq '1' ] && echo "Starting spiped instance: $MODE S-$SIP:$SP T-$TIP:$TP $KEYFILE"
+		[ "$DEBUG" -eq '1' ] && echo "$SERVICE_STRING"
+	}
+
+}
+
+stop() {
+
+	service_stop $BIN
+}
+
+keygen() {
+
+	[ "$DEBUG" -eq '1' ] && echo "Keygen!!"
+	dd if=/dev/urandom bs=32 count=1 of=$KEYFILE
+}
+

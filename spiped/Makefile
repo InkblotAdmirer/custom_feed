@@ -8,8 +8,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=spiped
-PKG_VERSION:=1.5.0
-PKG_RELEASE:=1
+PKG_VERSION:=2016-08-26
+PKG_RELEASE:=$(PKG_SOURCE_VERSION)
 PKG_MAINTAINER:=Maintainer Name <email@gmail.com>
 PKG_LICENSE:=GPL-3.0
 PKG_LICENSE_FILES:=COPYING
@@ -17,11 +17,14 @@ PKG_LICENSE_FILES:=COPYING
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/Tarsnap/spiped
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=bd542e5d054095b1f98093614b04ce852e9f6105
+PKG_SOURCE_VERSION:=3e2c5b21b977f3f51b0d825e1e07880f575835f7
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 
 PKG_INSTALL:=1
 PKG_FIXUP:=autoreconf
+
+# add compiler optimization (last flag on command line is the one used)
+TARGET_CFLAGS += -O2
 
 include $(INCLUDE_DIR)/package.mk
 

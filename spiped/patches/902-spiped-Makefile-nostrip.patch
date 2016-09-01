@@ -1,0 +1,11 @@
+--- a/spiped/Makefile
++++ b/spiped/Makefile
+@@ -11,7 +11,7 @@
+ install:${PROG}
+ 	mkdir -p ${BINDIR}
+ 	cp ${PROG} ${BINDIR}/_inst.${PROG}.$$$$_ &&	\
+-	    strip ${BINDIR}/_inst.${PROG}.$$$$_ &&	\
++#	    strip ${BINDIR}/_inst.${PROG}.$$$$_ &&	\
+ 	    chmod 0555 ${BINDIR}/_inst.${PROG}.$$$$_ && \
+ 	    mv -f ${BINDIR}/_inst.${PROG}.$$$$_ ${BINDIR}/${PROG}
+ 	if ! [ -z "${MAN1DIR}" ]; then			\

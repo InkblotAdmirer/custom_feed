@@ -1,0 +1,20 @@
+--- a/Makefile
++++ b/Makefile
+@@ -1,13 +1,13 @@
+ .POSIX:
+ 
+ PROGS=		spiped spipe
+-BINDIR_DEFAULT=	/usr/local/bin
++BINDIR_DEFAULT=	../ipkg-install/usr/sbin
+ CFLAGS_DEFAULT=	-O2
+ 
+ all: cpusupport-config.h
+-	export CFLAGS="$${CFLAGS:-${CFLAGS_DEFAULT}}";	\
+-	export LDADD_POSIX=`export CC="${CC}"; cd libcperciva/POSIX && command -p sh posix-l.sh "$$PATH"`;	\
+-	export CFLAGS_POSIX=`export CC="${CC}"; cd libcperciva/POSIX && command -p sh posix-cflags.sh "$$PATH"`;	\
++	CFLAGS="$${CFLAGS:-${CFLAGS_DEFAULT}}"; export CFLAGS;	\
++	LDADD_POSIX=`export CC="${CC}"; export LDADD_POSIX; cd libcperciva/POSIX && command -p sh posix-l.sh "$$PATH"`;	\
++	CFLAGS_POSIX=`export CC="${CC}"; export CFLAGS_POSIX; cd libcperciva/POSIX && command -p sh posix-cflags.sh "$$PATH"`;	\
+ 	. ./cpusupport-config.h;			\
+ 	for D in ${PROGS}; do				\
+ 		( cd $${D} && ${MAKE} all ) || exit 2;	\

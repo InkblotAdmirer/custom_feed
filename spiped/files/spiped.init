@@ -7,6 +7,7 @@ START=99
 NAME=spiped
 
 BIN=/usr/sbin/spiped
+PIDLOC=/var/run/spiped
 
 DEBUG='0'
 
@@ -18,8 +19,6 @@ start() {
 }
 
 spiped_instance() {
-
-	local TEST="$1"
 
 	config_get KEYFILE "$1" key_file
 	config_get SIP "$1" source_ip
@@ -37,9 +36,9 @@ spiped_instance() {
 		[ "$MODE" = "server" ] && MODEFLAG="-d"
 		[ "$MODE" = "client" ] && MODEFLAG="-e"
 	
-		SERVICE_STRING="$BIN $MODEFLAG -s [$SIP]:$SP -t [$TIP]:$TP -k $KEYFILE"
+		SERVICE_STRING="$BIN $MODEFLAG -s [$SIP]:$SP -t [$TIP]:$TP -k $KEYFILE -p $PIDLOC-[$SIP]:$SP.pid"
 
-		[ "$DEBUG" -eq '0' ] && service_start $SERVICE_STRING
+		[ "$DEBUG" -eq '0' ] && $SERVICE_STRING
 		[ "$DEBUG" -eq '0' ] && logger -t $NAME "Starting spiped instance: $MODE S-$SIP:$SP T-$TIP:$TP $KEYFILE"
 		[ "$DEBUG" -eq '1' ] && echo "Starting spiped instance: $MODE S-$SIP:$SP T-$TIP:$TP $KEYFILE"
 		[ "$DEBUG" -eq '1' ] && echo "$SERVICE_STRING"
@@ -49,7 +48,24 @@ spiped_instance() {
 
 stop() {
 
-	service_stop $BIN
+	config_load "${NAME}"
+	config_foreach remove_pidfile
+
+}
+
+remove_pidfile() {
+
+	config_get SIP "$1" source_ip
+	config_get SP "$1" source_port
+	config_get ENABLED "$1" enabled
+
+
+	[ "$ENABLED" -eq '1' ] && {
+		[ -e $PIDLOC-[$SIP]:$SP.pid ] && {
+			kill -9 $( cat $PIDLOC-[$SIP]:$SP.pid )
+			rm -f $PIDLOC-[$SIP]:$SP.pid
+		}	
+	}
 }
 
 keygen() {

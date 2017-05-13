@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=spiped
-PKG_VERSION:=2017-01-23
+PKG_VERSION:=2017-05-06
 PKG_RELEASE:=$(PKG_SOURCE_VERSION)
 PKG_MAINTAINER:=Maintainer Name <email@gmail.com>
 PKG_LICENSE:=GPL-3.0
@@ -17,7 +17,7 @@ PKG_LICENSE_FILES:=COPYING
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/Tarsnap/spiped
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=74f243726adb84394e923376770278c8ee4fd77d
+PKG_SOURCE_VERSION:=bd2621d55463e1471c91297166f6a1bcfbea88bc
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 
 PKG_INSTALL:=1
@@ -42,7 +42,7 @@ define Package/spiped/description
 endef
 
 define Package/spiped/conffiles
-/etc/spiped/
+/etc/config/spiped
 endef
 
 define Package/spiped/install

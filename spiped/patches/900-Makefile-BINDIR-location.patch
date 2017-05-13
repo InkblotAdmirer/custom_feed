@@ -1,9 +1,9 @@
 --- a/Makefile
 +++ b/Makefile
-@@ -1,13 +1,13 @@
- .POSIX:
+@@ -2,13 +2,13 @@
  
  PROGS=		spiped spipe
+ TESTS=		tests/nc-client tests/nc-server tests/valgrind
 -BINDIR_DEFAULT=	/usr/local/bin
 +BINDIR_DEFAULT=	../ipkg-install/usr/sbin
  CFLAGS_DEFAULT=	-O2
@@ -16,5 +16,5 @@
 +	LDADD_POSIX=`export CC="${CC}"; export LDADD_POSIX; cd libcperciva/POSIX && command -p sh posix-l.sh "$$PATH"`;	\
 +	CFLAGS_POSIX=`export CC="${CC}"; export CFLAGS_POSIX; cd libcperciva/POSIX && command -p sh posix-cflags.sh "$$PATH"`;	\
  	. ./cpusupport-config.h;			\
- 	for D in ${PROGS}; do				\
+ 	for D in ${PROGS} ${TESTS}; do			\
  		( cd $${D} && ${MAKE} all ) || exit 2;	\

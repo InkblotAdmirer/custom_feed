@@ -34,6 +34,7 @@ define Package/spiped
   DEPENDS:=+libopenssl
   TITLE:=Utility to create encrypted and authenticated pipes
   URL:=http://www.tarsnap.com/spiped.html
+  USERID:=spiped=8228:spiped=8228
 endef
 
 define Package/spiped/description

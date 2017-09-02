@@ -2,16 +2,22 @@
 
 START=99
 
+USE_PROCD=1
+
 . /lib/functions.sh
 
 NAME=spiped
 
 BIN=/usr/sbin/spiped
 PIDLOC=/var/run/spiped
+CFGFILE=/etc/config/spiped
 
-DEBUG='0'
+boot()
+{
+    rc_procd start_service
+}
 
-start() {
+start_service() {
 
 	config_load "${NAME}"
 	config_foreach spiped_instance
@@ -29,24 +35,42 @@ spiped_instance() {
 	config_get MODE "$1" mode
 
 	[ "$ENABLED" -eq '1' ] && {
-		# Generate key if none present and instance enabled -- keyfile thus can be unique per spiped instance
-		[ -s $KEYFILE ] || keygen
+
+		mkdir -p $PIDLOC
+		chown $NAME:$NAME $PIDLOC
+
+		# Generate key if none present and server instance enabled -- keyfile thus can be unique per spiped instance (client should use server's key)
+		([ ! -s $KEYFILE ] && [ "$MODE" == "server" ]) && keygen
+		([ ! -s $KEYFILE ] && [ "$MODE" == "client" ]) && {
+			logger -t $NAME "Aborting spiped instance: $MODE S-$SIP:$SP T-$TIP:$TP $KEYFILE : no keyfile"
+			return 0
+		}
 
 		# set switch for encrypt if client or decrypt if server
 		[ "$MODE" = "server" ] && MODEFLAG="-d"
 		[ "$MODE" = "client" ] && MODEFLAG="-e"
-	
-		SERVICE_STRING="$BIN $MODEFLAG -s [$SIP]:$SP -t [$TIP]:$TP -k $KEYFILE -p $PIDLOC-[$SIP]:$SP.pid"
 
-		[ "$DEBUG" -eq '0' ] && $SERVICE_STRING
-		[ "$DEBUG" -eq '0' ] && logger -t $NAME "Starting spiped instance: $MODE S-$SIP:$SP T-$TIP:$TP $KEYFILE"
-		[ "$DEBUG" -eq '1' ] && echo "Starting spiped instance: $MODE S-$SIP:$SP T-$TIP:$TP $KEYFILE"
-		[ "$DEBUG" -eq '1' ] && echo "$SERVICE_STRING"
+		PIDFILE=$PIDLOC/$NAME-[$SIP]:$SP.pid
+
+		SERVICE_STRING="${BIN} ${MODEFLAG} -s [${SIP}]:${SP} -t [${TIP}]:${TP} -k ${KEYFILE} -p ${PIDFILE}"
+
+		procd_open_instance "[${SIP}]:${SP}-[${TIP}]:${TP}"	# name instance source/target ip/port
+		procd_set_param command ${SERVICE_STRING}
+		[ $SP -gt 1023 ] && {					# run as root (and warn!) only if port < 1024
+		  procd_set_param user spiped
+		} || {
+		  logger -t $NAME "Warning: ${MODE} [${SIP}]:${SP} running as root!"
+		  procd_set_param user root
+		}
+
+		procd_close_instance
+
+		logger -t $NAME "Starting spiped instance: $MODE S-$SIP:$SP T-$TIP:$TP $KEYFILE running as $USER"
 	}
 
 }
 
-stop() {
+stop_service() {
 
 	config_load "${NAME}"
 	config_foreach remove_pidfile
@@ -59,18 +83,22 @@ remove_pidfile() {
 	config_get SP "$1" source_port
 	config_get ENABLED "$1" enabled
 
+	PIDFILE=$PIDLOC/$NAME-[$SIP]:$SP.pid
 
 	[ "$ENABLED" -eq '1' ] && {
-		[ -e $PIDLOC-[$SIP]:$SP.pid ] && {
-			kill -9 $( cat $PIDLOC-[$SIP]:$SP.pid )
-			rm -f $PIDLOC-[$SIP]:$SP.pid
-		}	
+		[ -e $PIDFILE ] && {
+			kill -9 $( cat $PIDFILE )
+			rm -f $PIDFILE
+		}
 	}
 }
 
 keygen() {
 
-	[ "$DEBUG" -eq '1' ] && echo "Keygen!!"
+	logger -t $NAME "No key exists - generating with /dev/urandom"
 	dd if=/dev/urandom bs=32 count=1 of=$KEYFILE
+	chown $NAME:$NAME $KEYFILE
+	chmod 600 $KEYFILE
+
 }
 

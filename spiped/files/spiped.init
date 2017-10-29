@@ -11,6 +11,9 @@ NAME=spiped
 BIN=/usr/sbin/spiped
 PIDLOC=/var/run/spiped
 CFGFILE=/etc/config/spiped
+HOSTIP=$(/bin/ipcalc.sh $(uci get network.lan.ipaddr)/24 | grep "IP" | sed 's:.*=::')
+
+USER=spiped
 
 boot()
 {
@@ -52,16 +55,32 @@ spiped_instance() {
 
 		PIDFILE=$PIDLOC/$NAME-[$SIP]:$SP.pid
 
-		SERVICE_STRING="${BIN} ${MODEFLAG} -s [${SIP}]:${SP} -t [${TIP}]:${TP} -k ${KEYFILE} -p ${PIDFILE}"
+		SERVICE_STRING="${BIN} ${MODEFLAG} -g -F -s [${SIP}]:${SP} -t [${TIP}]:${TP} -k ${KEYFILE} -p ${PIDFILE}"
 
 		procd_open_instance "[${SIP}]:${SP}-[${TIP}]:${TP}"	# name instance source/target ip/port
 		procd_set_param command ${SERVICE_STRING}
-		[ $SP -gt 1023 ] && {					# run as root (and warn!) only if port < 1024
-		  procd_set_param user spiped
-		} || {
+
+		procd_set_param file "$CFGFILE"
+		procd_set_param file "$KEYFILE"
+		procd_set_param stdout 1
+		procd_set_param stderr 1
+		procd_set_param pidfile "$PIDFILE"
+
+		[ $SP -lt 1024 ] && [ $SIP == "0.0.0.0" -o $SIP == "127.0.0.1" -o $SIP == $HOSTIP ] && USER=root
+		[ $TP -lt 1024 ] && [ $TIP == "0.0.0.0" -o $TIP == "127.0.0.1" -o $TIP == $HOSTIP ] && USER=root
+
+		[ $USER == "root" ] && {
 		  logger -t $NAME "Warning: ${MODE} [${SIP}]:${SP} running as root!"
-		  procd_set_param user root
+		} || {
+		  chown spiped $KEYFILE
+		  chown spiped $PIDLOC
 		}
+
+		procd_set_param user $USER
+
+		procd_add_jail spiped ubus log
+		procd_add_jail_mount $KEYFILE /lib/ld-musl-arm.so.1 /lib/libc.so /usr/lib/libcrypto.so* /lib/libgcc_s.so*
+		procd_add_jail_mount_rw $PIDLOC/ /dev/null
 
 		procd_close_instance
 

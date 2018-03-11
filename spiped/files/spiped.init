@@ -3,17 +3,18 @@
 START=99
 
 USE_PROCD=1
-
-. /lib/functions.sh
-
 NAME=spiped
 
-BIN=/usr/sbin/spiped
-PIDLOC=/var/run/spiped
-CFGFILE=/etc/config/spiped
-HOSTIP=$(/bin/ipcalc.sh $(uci get network.lan.ipaddr)/24 | grep "IP" | sed 's:.*=::')
+which uci > /dev/null 2>&1 && {
+    . /lib/functions.sh
 
-USER=spiped
+    BIN=/usr/sbin/spiped
+    PIDLOC=/var/run/spiped
+    CFGFILE=/etc/config/spiped
+    HOSTIP=$(/bin/ipcalc.sh $(uci get network.lan.ipaddr)/24 | grep "IP" | sed 's:.*=::')
+
+    USER=spiped
+}
 
 boot()
 {

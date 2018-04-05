@@ -23,4 +23,4 @@ dnscrypt-proxy-v2 notes:
 
 The OpenWRT build system does not currently include the capability to cross-compile Go, so the precompiled ARM binary is downloaded and installed.
 
-The service is started with procd referencing /etc/config/dnscrypt-proxy-v2.toml for configuration.  The included configuration example is installed directly.  The process is run as user nobody in group nogroup, and empty blacklist files with these permissions are created in /tmp.
+The service is started with procd referencing /etc/config/dnscrypt-proxy-v2.toml for configuration.  The included configuration example is installed directly.  The process is run as user nobody in group nogroup, and empty blacklist and cloaking files with these permissions are created in /tmp.  Procd reload triggering is hard coded to "wan" -- this, and other hard-coded configuration settings are planned to be configured via UCI eventually.

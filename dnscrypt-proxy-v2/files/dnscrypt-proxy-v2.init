@@ -1,71 +1,88 @@
 #!/bin/sh /etc/rc.common
 
-START=99
+START=30
 
 USE_PROCD=1
 NAME=dnscrypt-proxy-v2
 
 which uci > /dev/null 2>&1 && {
 
-    . /lib/functions.sh
+	. /lib/functions.sh
 
-    BIN=/usr/sbin/dnscrypt-proxy-v2
-    PIDLOC=/var/run/dnscrypt-proxy-v2
-    CFGFILE=/etc/config/dnscrypt-proxy-v2.toml
+	BIN=/usr/sbin/dnscrypt-proxy-v2
+	PIDLOC=/var/run
+	CFGLOC=/var/etc
+	CFGFILE=/etc/dnscrypt-proxy/dnscrypt-proxy-v2.toml
+	CFGRUN=$CFGLOC/dnscrypt-proxy-v2.toml
 
-    USER=nobody
-    GRP=nogroup
+	USER=nobody
+	GRP=nogroup
 
-    BLACKLIST_DOMAINS=/tmp/blacklist-domains.txt
-    BLACKLIST_IPS=/tmp/blacklist-ips.txt
+	BLACKLIST_DOMAINS=/tmp/blacklist-domains.txt
+	BLACKLIST_IPS=/tmp/blacklist-ips.txt
+	CLOAKING_DOMAINS=/tmp/cloaking-rules.txt
+
+	PIDFILE=$PIDLOC/$NAME-$USER.pid
 }
 
 boot()
 {
-    rc_procd start_service
+	rc_procd start_service
 }
 
 start_service() {
 
-	mkdir -p $PIDLOC
-	chown $USER:$GRP $PIDLOC
+	mkdir -p $PIDLOC $CFGLOC
 
-    touch $BLACKLIST_DOMAINS
-    touch $BLACKLIST_IPS
-    chown $USER:$GRP $BLACKLIST_DOMAINS
-    chown $USER:$GRP $BLACKLIST_IPS
-
-	PIDFILE=$PIDLOC/$NAME-$USER.pid
-
-	SERVICE_STRING="${BIN} -config ${CFGFILE}"
-
-	procd_open_instance "$NAME-$USER"
-	procd_set_param command ${SERVICE_STRING}
-
-	procd_set_param file "$CFGFILE"
-	procd_set_param stdout 1
-	procd_set_param stderr 1
-	procd_set_param pidfile "$PIDFILE"
-
-	[ $USER == "root" ] && {
-	  logger -t $NAME "Warning: ${NAME} running as root!"
+	[ -f "${CFGFILE}" ] && {
+		cp "${CFGFILE}" "${CFGRUN}"
+		chmod 644 "${CFGRUN}"
 	} || {
-	  chown $USER:$GRP $PIDLOC
+		logger -t $NAME "Warning: ${CFGFILE} does not exist!"
 	}
 
-	procd_set_param user $USER
-
-	procd_close_instance
+	touch $BLACKLIST_DOMAINS $BLACKLIST_IPS $CLOAKING_DOMAINS
+	chmod 644 $BLACKLIST_DOMAINS $BLACKLIST_IPS $CLOAKING_DOMAINS
 
 	logger -t $NAME "Starting $NAME instance running as $USER"
+
+	SERVICE_STRING="${BIN} -config ${CFGRUN}"
+
+	procd_open_instance "${NAME}-${USER}"
+	procd_set_param command ${SERVICE_STRING}
+
+	procd_set_param file "${CFGRUN}"
+	procd_set_param stdout 1
+	procd_set_param stderr 1
+	procd_set_param pidfile "${PIDFILE}"
+
+	[ $USER == "root" ] && logger -t $NAME "Warning: ${NAME} running as root!"
+
+	procd_set_param user $USER
+	procd_close_instance
 }
 
 stop_service() {
 
-	PIDFILE=$PIDLOC/$NAME-$USER.pid
 	[ -e $PIDFILE ] && {
 		kill -9 $( cat $PIDFILE )
 		rm -f $PIDFILE
 	}
 }
 
+service_triggers() {
+	local trigger
+	local triggerlist="wan"
+
+	PROCD_RELOAD_DELAY=2000
+	if [ -n "${triggerlist}" ]
+	then
+		for trigger in ${triggerlist}
+		do
+			procd_add_interface_trigger "interface.*.up" "${trigger}" /etc/init.d/dnscrypt-proxy-v2 reload
+		done
+	else
+		procd_add_raw_trigger "interface.*.up" 2000 /etc/init.d/dnscrypt-proxy-v2 reload
+	fi
+	procd_add_reload_trigger 'dnscrypt-proxy-v2'
+}

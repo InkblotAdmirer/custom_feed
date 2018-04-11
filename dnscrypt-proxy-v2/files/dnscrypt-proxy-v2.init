@@ -11,8 +11,9 @@ which uci > /dev/null 2>&1 && {
 
 	BIN=/usr/sbin/dnscrypt-proxy-v2
 	PIDLOC=/var/run
-	CFGLOC=/var/etc
-	CFGFILE=/etc/dnscrypt-proxy/dnscrypt-proxy-v2.toml
+	CFGLOC=/var/etc/dnscrypt
+	CFGDIR=/etc/dnscrypt-proxy
+	CFGFILE=$CFGDIR/dnscrypt-proxy-v2.toml
 	CFGRUN=$CFGLOC/dnscrypt-proxy-v2.toml
 
 	USER=nobody
@@ -36,9 +37,23 @@ start_service() {
 
 	[ -f "${CFGFILE}" ] && {
 		cp "${CFGFILE}" "${CFGRUN}"
+		chown "${USER}":"${GRP}" "${CFGLOC}"
 		chmod 644 "${CFGRUN}"
 	} || {
 		logger -t $NAME "Warning: ${CFGFILE} does not exist!"
+	}
+
+	[ -d $CFGDIR ] && {
+		[ -f $CFGDIR/cloaking*.txt ] && {
+			cp $CFGDIR/cloaking*.txt $CLOAKING_DOMAINS
+		}
+		[ -f $CFGDIR/blacklist*.txt ] && {
+			cp $CFGDIR/blacklist*.txt /tmp
+		}
+		[ -f $CFGDIR/public-resolvers.md ] && {
+			cp $CFGDIR/public* $CFGLOC
+			chown "${USER}":"${GRP}" $CFGLOC/public*
+		}
 	}
 
 	touch $BLACKLIST_DOMAINS $BLACKLIST_IPS $CLOAKING_DOMAINS

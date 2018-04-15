@@ -124,8 +124,8 @@ dnscrypt_config() {
 	[ "${block_ipv6}" -ne '0' ] && {
 		sed -i "/block_ipv6/ c\block_ipv6 = true" $CFGRUN
 	}
-	[ "${local_cache}" -ne '0' ] && {
-		sed -i "/cache = / c\cache = true" $CFGRUN
+	[ "${local_cache}" -ne '1' ] && {
+		sed -i "/cache = / c\cache = false" $CFGRUN
 	}
 	[ ! -z "${log_file}" ] && {
 		cat "${CFGRUN}" | awk '{print (/log_file =/ && (++c==1) ? "log_file = '\'${log_file}\''" : $0)}' > /tmp/dnsc.working

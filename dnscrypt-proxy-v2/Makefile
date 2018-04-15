@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dnscrypt-proxy-v2
-PKG_VERSION:=2.0.9b2
+PKG_VERSION:=2.0.9
 PKG_RELEASE:=1
 PKG_MAINTAINER:=Maintainer Name <email@gmail.com>
 PKG_LICENSE:=GPL-3.0
@@ -16,7 +16,7 @@ PKG_LICENSE_FILES:=COPYING
 
 PKG_SOURCE:=dnscrypt-proxy-linux_arm-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/jedisct1/dnscrypt-proxy/releases/download/$(PKG_VERSION)/
-PKG_HASH:=91ef3b3581af571034827fcdf854e6cf58c557e7acf37eeeb387bd0a2ee48acb
+PKG_HASH:=445861af66334bba5b92fe406bb0a0d17aa6dd36cb4088375cdcad8d82334d24
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 
 PKG_INSTALL:=1
@@ -38,7 +38,7 @@ define Package/dnscrypt-proxy-v2/description
 endef
 
 define Package/dnscrypt-proxy-v2/conffiles
-/etc/dnscrypt-proxy/dnscrypt-proxy-v2.toml
+/etc/dnscrypt-proxy/dnscrypt-proxy.toml
 endef
 
 define Build/Prepare
@@ -51,19 +51,22 @@ endef
 
 define Build/Install
 	mkdir -p \
+		$(PKG_INSTALL_DIR)/etc/config \
 		$(PKG_INSTALL_DIR)/etc/dnscrypt-proxy \
 		$(PKG_INSTALL_DIR)/etc/init.d \
 		$(PKG_INSTALL_DIR)/usr/sbin
 endef
 
 define Package/dnscrypt-proxy-v2/install
+	$(INSTALL_DIR) $(1)/etc/config
+	$(INSTALL_BIN) ./files/dnscrypt-proxy-v2.conf $(1)/etc/config/dnscrypt-proxy
 	$(INSTALL_DIR) $(1)/etc/dnscrypt-proxy
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/linux-arm/example-dnscrypt-proxy.toml \
-        $(1)/etc/dnscrypt-proxy/dnscrypt-proxy-v2.toml
+        $(1)/etc/dnscrypt-proxy/dnscrypt-proxy.toml
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/dnscrypt-proxy-v2.init $(1)/etc/init.d/dnscrypt-proxy-v2
+	$(INSTALL_BIN) ./files/dnscrypt-proxy-v2.init $(1)/etc/init.d/dnscrypt-proxy
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/linux-arm/dnscrypt-proxy $(1)/usr/sbin/dnscrypt-proxy-v2
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/linux-arm/dnscrypt-proxy $(1)/usr/sbin/dnscrypt-proxy
 endef
 
 $(eval $(call BuildPackage,dnscrypt-proxy-v2))

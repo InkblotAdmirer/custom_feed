@@ -23,4 +23,19 @@ dnscrypt-proxy-v2 notes:
 
 The OpenWRT build system does not currently include the capability to cross-compile Go, so the precompiled ARM binary is downloaded and installed.
 
-The service is started with procd referencing /etc/config/dnscrypt-proxy-v2.toml for configuration.  The included configuration example is installed directly.  The process is run as user nobody in group nogroup, and empty blacklist and cloaking files with these permissions are created in /tmp.  Procd reload triggering is hard coded to "wan" -- this, and other hard-coded configuration settings are planned to be configured via UCI eventually.
+NOTE: the latest commit is now backward feature-compatible with the original dnscrypt-proxy package, so it is converted to run as dnscrypt-proxy instead of dnscrypt-proxy-v2.  Installs from previous versions will likely require manual intervention after install (i.e. removal of extra files, update of configuration files).  Note that the non-UCI configuration files are to be located in /etc/dnscrypt-proxy.
+
+Source configuration files are copied from /etc/dnscrypt-proxy into /var/etc/dnscrypt, and modified there (UCI-configurable parameters) as necessary.  The service is started with procd referencing the copies in /var/etc/dnscrypt/dnscrypt-proxy.  Configuration options not available in /etc/config/dnscrypt-proxy may be modified in /etc/dnscrypt-proxy/dnscrypt-proxy.toml.
+
+The process is run as user nobody in group nogroup and will listen on 127.0.0.1:5353 by default (no IPv6, to be compatible with baseline v1 installs).
+
+Blacklist and cloaking configuration files should be placed in /etc/dnscrypt-proxy.  These should contain *blacklist* and *cloaking* in the names, as changes to these files are copied back to the configuration folder on stop or shutdown, to preserve across runs.  Note that the blacklist file will be copied into /var/etc/dnscrypt and sourced from there and the log file will be located at the patch specified in the UCI config blacklist list.  The syntax is kept common with the original dnscrypt-proxy which presents a challenge as the parsing must now be in the init script rather than in the dnscrypt-proxy program itself.  As such, there are the currently supported blacklist configurations:
+	1) a single blacklist file, either domain or IP
+	2) a single blacklist file, either domain or IP with a corresponding log file
+	3) two blacklist files, one domain and one IP
+	4) two blacklist files, both with a corresponding log file
+Any combination other than this will result in undefined behavior.
+
+Downloaded resolver lists and signature files are also copied to the /etc/dnscrypt-proxy configuration folder to preserve across restarts/reloads.
+
+Procd reload triggering is configured in /etc/config as a list with a default of "wan".

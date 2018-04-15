@@ -3,27 +3,138 @@
 START=30
 
 USE_PROCD=1
-NAME=dnscrypt-proxy-v2
+NAME=dnscrypt-proxy
 
-which uci > /dev/null 2>&1 && {
+BIN=/usr/sbin/dnscrypt-proxy
+PIDLOC=/var/run
+CFGLOC=/var/etc/dnscrypt
+CFGDIR=/etc/dnscrypt-proxy
+CFGFILE=$CFGDIR/dnscrypt-proxy.toml
+CFGRUN=$CFGLOC/dnscrypt-proxy.toml
+PIDFILE=$PIDLOC/$NAME-$USER.pid
+USER=nobody
+GRP=nogroup
 
-	. /lib/functions.sh
+dnscrypt_config() {
 
-	BIN=/usr/sbin/dnscrypt-proxy-v2
-	PIDLOC=/var/run
-	CFGLOC=/var/etc/dnscrypt
-	CFGDIR=/etc/dnscrypt-proxy
-	CFGFILE=$CFGDIR/dnscrypt-proxy-v2.toml
-	CFGRUN=$CFGLOC/dnscrypt-proxy-v2.toml
+	local address4 port4 address6 port6 log_file log_level cloaking_file blacklist bl_config bl_log bl_type bl_file bl_type
+	local syslog ephemeral_keys local_cache block_ipv6
+	local bl='0'
 
-	USER=nobody
-	GRP=nogroup
+	config_get		address4			$1	'address'				'127.0.0.1'
+	config_get		port4				$1	'port'					'5353'
+	config_get		address6			$1	'ipv6_address'			''
+	config_get		port6				$1	'ipv6_port'				'5353'
+	config_get		log_file			$1	'log_file'				''
+	config_get		log_level			$1	'log_level'				'6'
+	config_get		cloaking_file		$1	'cloaking_file'			''
+	config_get		blacklist			$1	'blacklist'				''
+	config_get_bool	syslog				$1	'syslog'					'1'
+	config_get_bool	ephemeral_keys		$1	'ephemeral_keys'			'0'
+	config_get_bool	local_cache			$1	'local_cache'			'0'
+	config_get_bool	block_ipv6			$1	'block_ipv6'				'0'
 
-	BLACKLIST_DOMAINS=/tmp/blacklist-domains.txt
-	BLACKLIST_IPS=/tmp/blacklist-ips.txt
-	CLOAKING_DOMAINS=/tmp/cloaking-rules.txt
+	[ -z "${address6}" ] && listen_string="['${address4}:${port4}']" || listen_string="['${address4}:${port4}', '${address6}:${port6}']"
 
-	PIDFILE=$PIDLOC/$NAME-$USER.pid
+	BLACKLIST_DOMAINS=""
+	BLACKLIST_DLOG=""
+	BLACKLIST_IPS=""
+	BLACKLIST_IPLOG=""
+
+	[ -n "${blacklist}" ] && {
+		bl_config=$(echo "${blacklist}" | awk '{print $1}')
+		bl=$(echo $blacklist | wc -w)
+		case $bl in
+			"1")
+				[ "${bl_config%:*}" == "domains" ] && BLACKLIST_DOMAINS="${bl_config#*:}" || {
+					[ "${bl_config%:*}" == "ips" ] && BLACKLIST_IPS="${bl_config#*:}"
+				}
+				;;
+			"2")
+				[ "${bl_config%:*}" == "domains" ] && BLACKLIST_DOMAINS="${bl_config#*:}" || {
+					[ "${bl_config%:*}" == "ips" ] && BLACKLIST_IPS="${bl_config#*:}"
+				}
+				bl_type=$(echo "${blacklist}" | awk '{print $2}')
+				[ "${bl_type%:*}" == "logfile" ] && {
+					[ "${bl_config%:*}" == "domains" ] && BLACKLIST_DLOG="${bl_type#*:}" || {
+						[ "${bl_config%:*}" == "ips" ] && BLACKLIST_IPLOG="${bl_type#*:}"
+					}
+				} || {
+					[ "${bl_type%:*}" == "domains" ] && BLACKLIST_DOMAINS="${bl_type#*:}" || {
+						[ "${bl_type%:*}" == "ips" ] && BLACKLIST_IPS="${bl_type#*:}"
+					}
+				}
+				;;
+			"4")
+				bl_config=$(echo "${blacklist}" | awk '{print $1}')
+				[ "${bl_config%:*}" == "domains" ] && BLACKLIST_DOMAINS="${bl_config#*:}" || {
+						[ "${bl_config%:*}" == "ips" ] && BLACKLIST_IPS="${bl_config#*:}"
+				}
+				bl_type=$(echo "${blacklist}" | awk '{print $2}')
+				[ "${bl_config%:*}" == "domains" ] && BLACKLIST_DLOG="${bl_type#*:}" || {
+					[ "${bl_config%:*}" == "ips" ] && BLACKLIST_IPLOG="${bl_type#*:}"
+				}
+				bl_config=$(echo "${blacklist}" | awk '{print $3}')
+				[ "${bl_config%:*}" == "domains" ] && BLACKLIST_DOMAINS="${bl_config#*:}" || {
+						[ "${bl_config%:*}" == "ips" ] && BLACKLIST_IPS="${bl_config#*:}"
+				}
+				bl_type=$(echo "${blacklist}" | awk '{print $4}')
+				[ "${bl_config%:*}" == "domains" ] && BLACKLIST_DLOG="${bl_type#*:}" || {
+					[ "${bl_config%:*}" == "ips" ] && BLACKLIST_IPLOG="${bl_type#*:}"
+				}
+				;;
+		esac
+	}
+	CLOAKING_DOMAINS="${cloaking_file}"
+
+	sed -i "/listen_addresses/ c\listen_addresses = ${listen_string}" $CFGRUN
+
+	[ -d $CFGDIR ] && {
+		[ -f "${CFGDIR}/${CLOAKING_DOMAINS}" ] && {
+			[ ! -f "${CFGLOC}/${CLOAKING_DOMAINS}" ] && cp "${CFGDIR}/${CLOAKING_DOMAINS}" "${CFGLOC}/${CLOAKING_DOMAINS}"
+			sed -i "/cloaking_rules/ c\cloaking_rules = '${CFGLOC}/${CLOAKING_DOMAINS}'" $CFGRUN
+		}
+		[ -f "${CFGDIR}/${BLACKLIST_DOMAINS}" ] && {
+			[ ! -f "${CFGLOC}/${BLACKLIST_DOMAINS}" ] && cp "${CFGDIR}/${BLACKLIST_DOMAINS}" "${CFGLOC}/${BLACKLIST_DOMAINS}"
+			cat "${CFGRUN}" | awk '{print (/blacklist_file/ && (++c==1) ? "  blacklist_file = '\'${CFGLOC}/${BLACKLIST_DOMAINS}\''" : $0)}' > /tmp/dnsc.working
+			mv /tmp/dnsc.working "${CFGRUN}"
+			cat "${CFGRUN}" | awk '{print (/log_file = / && (++c==2) ? "  log_file = '\'${BLACKLIST_DLOG}\''" : $0)}' > /tmp/dnsc.working
+			mv /tmp/dnsc.working "${CFGRUN}"
+		}
+		[ -f "${CFGDIR}/${BLACKLIST_IPS}" ] && {
+			[ ! -f "${CFGLOC}/${BLACKLIST_IPS}" ] && cp "${CFGDIR}/${BLACKLIST_IPS}" "${CFGLOC}/${BLACKLIST_IPS}"
+			cat "${CFGRUN}" | awk '{print (/blacklist_file/ && (++c==2) ? "  blacklist_file = '\'${CFGLOC}/${BLACKLIST_IPS}\''" : $0)}' > /tmp/dnsc.working
+			mv /tmp/dnsc.working "${CFGRUN}"
+			cat "${CFGRUN}" | awk '{print (/log_file = / && (++c==3) ? "  log_file = '\'${BLACKLIST_IPLOG}\''" : $0)}' > /tmp/dnsc.working
+			mv /tmp/dnsc.working "${CFGRUN}"
+		}
+		[ -f "${CFGDIR/public-resolvers.md}" ] && {
+			cp "${CFGDIR/public*}" "${CFGLOC}"
+			chown "${USER}":"${GRP}" "${CFGLOC/public*}"
+		}
+	} || {
+		mkdir -p $CFGDIR
+	}
+	[ "${syslog}" -ne 0 ] && {
+		sed -i "/use_syslog/ c\use_syslog = true" $CFGRUN
+	}
+	[ "${ephemeral_keys}" -ne '0' ] && {
+		sed -i "/ephemeral_keys/ c\dnscrypt_ephemeral_keys = true" $CFGRUN
+	}
+	[ "${block_ipv6}" -ne '0' ] && {
+		sed -i "/block_ipv6/ c\block_ipv6 = true" $CFGRUN
+	}
+	[ "${local_cache}" -ne '0' ] && {
+		sed -i "/cache = / c\cache = true" $CFGRUN
+	}
+	[ ! -z "${log_file}" ] && {
+		cat "${CFGRUN}" | awk '{print (/log_file =/ && (++c==1) ? "log_file = '\'${log_file}\''" : $0)}' > /tmp/dnsc.working
+		mv /tmp/dnsc.working "${CFGRUN}"
+	}
+	sed -i "/log_level = / c\log_level = $log_level" $CFGRUN
+
+	touch $BLACKLIST_DOMAINS $BLACKLIST_IPS $CLOAKING_DOMAINS
+	chmod 644 $BLACKLIST_DOMAINS $BLACKLIST_IPS $CLOAKING_DOMAINS "${CFGRUN}"
 }
 
 boot()
@@ -38,26 +149,12 @@ start_service() {
 	[ -f "${CFGFILE}" ] && {
 		cp "${CFGFILE}" "${CFGRUN}"
 		chown "${USER}":"${GRP}" "${CFGLOC}"
-		chmod 644 "${CFGRUN}"
 	} || {
 		logger -t $NAME "Warning: ${CFGFILE} does not exist!"
 	}
 
-	[ -d $CFGDIR ] && {
-		[ -f $CFGDIR/cloaking*.txt ] && {
-			cp $CFGDIR/cloaking*.txt $CLOAKING_DOMAINS
-		}
-		[ -f $CFGDIR/blacklist*.txt ] && {
-			cp $CFGDIR/blacklist*.txt /tmp
-		}
-		[ -f $CFGDIR/public-resolvers.md ] && {
-			cp $CFGDIR/public* $CFGLOC
-			chown "${USER}":"${GRP}" $CFGLOC/public*
-		}
-	}
-
-	touch $BLACKLIST_DOMAINS $BLACKLIST_IPS $CLOAKING_DOMAINS
-	chmod 644 $BLACKLIST_DOMAINS $BLACKLIST_IPS $CLOAKING_DOMAINS
+	config_load dnscrypt-proxy
+	config_foreach dnscrypt_config dnscrypt-proxy
 
 	logger -t $NAME "Starting $NAME instance running as $USER"
 
@@ -79,6 +176,15 @@ start_service() {
 
 stop_service() {
 
+	local copylist="$CFGLOC/*cloaking* $CFGLOC/*blacklist* $CFGLOC/public*"
+
+	[ -d $CFGDIR ] && {
+		for cl in $copylist
+		do
+			cp -f $cl $CFGDIR > /dev/null 2>&1
+		done
+	}
+
 	[ -e $PIDFILE ] && {
 		kill -9 $( cat $PIDFILE )
 		rm -f $PIDFILE
@@ -86,18 +192,24 @@ stop_service() {
 }
 
 service_triggers() {
+
 	local trigger
-	local triggerlist="wan"
+	local triggerlist="$(uci_get dnscrypt-proxy.@global[0].procd_trigger)"
 
 	PROCD_RELOAD_DELAY=2000
 	if [ -n "${triggerlist}" ]
 	then
 		for trigger in ${triggerlist}
 		do
-			procd_add_interface_trigger "interface.*.up" "${trigger}" /etc/init.d/dnscrypt-proxy-v2 reload
+			procd_add_interface_trigger "interface.*.up" "${trigger}" /etc/init.d/dnscrypt-proxy reload
 		done
 	else
-		procd_add_raw_trigger "interface.*.up" 2000 /etc/init.d/dnscrypt-proxy-v2 reload
+		procd_add_raw_trigger "interface.*.up" 2000 /etc/init.d/dnscrypt-proxy reload
 	fi
-	procd_add_reload_trigger 'dnscrypt-proxy-v2'
+	procd_add_reload_trigger 'dnscrypt-proxy'
+}
+
+shutdown() {
+
+	stop_service
 }

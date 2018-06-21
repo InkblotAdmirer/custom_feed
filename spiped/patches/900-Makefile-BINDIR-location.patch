@@ -1,20 +1,25 @@
 --- a/Makefile
 +++ b/Makefile
-@@ -2,13 +2,13 @@
- 
+@@ -3,7 +3,7 @@
  PROGS=		spiped spipe
- TESTS=		tests/nc-client tests/nc-server tests/valgrind
+ TESTS=		tests/dnsthread-resolve tests/nc-client tests/nc-server	\
+ 		tests/valgrind
 -BINDIR_DEFAULT=	/usr/local/bin
 +BINDIR_DEFAULT=	../ipkg-install/usr/sbin
  CFLAGS_DEFAULT=	-O2
+ LIBCPERCIVA_DIR=	libcperciva
+ TEST_CMD=	tests/test_spiped.sh
+@@ -11,9 +11,9 @@
+ ### Shared code between Tarsnap projects.
  
- all: cpusupport-config.h
+ all:	cpusupport-config.h
 -	export CFLAGS="$${CFLAGS:-${CFLAGS_DEFAULT}}";	\
--	export "LDADD_POSIX=`export CC=\"${CC}\"; cd libcperciva/POSIX && command -p sh posix-l.sh \"$$PATH\"`";	\
--	export "CFLAGS_POSIX=`export CC=\"${CC}\"; cd libcperciva/POSIX && command -p sh posix-cflags.sh \"$$PATH\"`";	\
-+	CFLAGS="$${CFLAGS:-${CFLAGS_DEFAULT}}"; export CFLAGS;	\
-+	LDADD_POSIX=`export CC="${CC}"; export LDADD_POSIX; cd libcperciva/POSIX && command -p sh posix-l.sh "$$PATH"`;	\
-+	CFLAGS_POSIX=`export CC="${CC}"; export CFLAGS_POSIX; cd libcperciva/POSIX && command -p sh posix-cflags.sh "$$PATH"`;	\
+-	export "LDADD_POSIX=`export CC=\"${CC}\"; cd ${LIBCPERCIVA_DIR}/POSIX && command -p sh posix-l.sh \"$$PATH\"`";	\
+-	export "CFLAGS_POSIX=`export CC=\"${CC}\"; cd ${LIBCPERCIVA_DIR}/POSIX && command -p sh posix-cflags.sh \"$$PATH\"`";	\
++	CFLAGS="$${CFLAGS:-${CFLAGS_DEFAULT}}";	export CFLAGS; \
++	LDADD_POSIX=`export CC=\"${CC}\"; cd ${LIBCPERCIVA_DIR}/POSIX && command -p sh posix-l.sh \"$$PATH\"`;	\
++	CFLAGS_POSIX=`export CC=\"${CC}\"; cd ${LIBCPERCIVA_DIR}/POSIX && command -p sh posix-cflags.sh \"$$PATH\"`;	\
  	. ./cpusupport-config.h;			\
  	for D in ${PROGS} ${TESTS}; do			\
  		( cd $${D} && ${MAKE} all ) || exit 2;	\
+

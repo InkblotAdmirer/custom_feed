@@ -172,6 +172,8 @@ start_service() {
 	[ $USER == "root" ] && logger -t $NAME "Warning: ${NAME} running as root!"
 
 	procd_set_param user $USER
+	procd_set_param respawn
+
 	procd_close_instance
 }
 

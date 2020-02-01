@@ -21,7 +21,9 @@ Testing has consisted of tcpdump captures on each of the ports, and information 
 
 dnscrypt-proxy-v2 notes:
 
-The OpenWRT build system does not currently include the capability to cross-compile Go, so the precompiled ARM binary is downloaded and installed.
+As of 2.0.39 Go is used to compile from source.  If not already installed, execute "./scripts/feeds install golang" from the OpenWRT source directory.
+
+Prior to version 2.0.39: The OpenWRT build system does not currently include the capability to cross-compile Go, so the precompiled ARM binary is downloaded and installed.
 
 NOTE: the latest commit is now backward feature-compatible with the original dnscrypt-proxy package, so it is converted to run as dnscrypt-proxy instead of dnscrypt-proxy-v2.  Installs from previous versions will likely require manual intervention after install (i.e. removal of extra files, update of configuration files).  Note that the non-UCI configuration files are to be located in /etc/dnscrypt-proxy.
 

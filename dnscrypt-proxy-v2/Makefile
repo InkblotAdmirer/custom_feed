@@ -8,15 +8,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dnscrypt-proxy-v2
-PKG_VERSION:=2.0.39
-PKG_RELEASE:=2
+PKG_VERSION:=2.0.40
+PKG_RELEASE:=1
 PKG_MAINTAINER:=Maintainer Name <email@gmail.com>
 PKG_LICENSE:=GPL-3.0
 PKG_LICENSE_FILES:=COPYING
 
 PKG_SOURCE:=$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/DNSCrypt/dnscrypt-proxy/archive/
-PKG_HASH:=c943c74c0894bb51336529e733ca3811dffdb914a59b9707c63a327f2c8ff835
+PKG_HASH:=17f95cf9e38ce864a89dcefa30a4c2e23d78fb3514cd3567a60f7a0dfc133d78
 PKG_BUILD_DIR:=$(BUILD_DIR)/dnscrypt-proxy-$(PKG_VERSION)
 
 PKG_BUILD_DEPENDS:=golang/host

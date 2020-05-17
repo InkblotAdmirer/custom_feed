@@ -1,6 +1,6 @@
 --- a/spipe/Makefile
 +++ b/spipe/Makefile
-@@ -11,7 +11,7 @@
+@@ -20,7 +20,7 @@
  install:${PROG}
  	mkdir -p ${BINDIR}
  	cp ${PROG} ${BINDIR}/_inst.${PROG}.$$$$_ &&	\

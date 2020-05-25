@@ -47,6 +47,12 @@ define Package/spiped/conffiles
 /etc/config/spiped
 endef
 
+define Build/Configure
+	sed -i 's/@VERSION@/${PKG_VERSION}/g' $(PKG_BUILD_DIR)/spipe/main.c
+	sed -i 's/@VERSION@/${PKG_VERSION}/g' $(PKG_BUILD_DIR)/spiped/main.c
+	$(call Build/Configure/Default)
+endef
+
 define Package/spiped/install
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/spiped.conf $(1)/etc/config/spiped

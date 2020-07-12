@@ -1,0 +1,12 @@
+--- a/src/MakeApp.mk	2020-07-12 11:59:14.933245294 -0500
++++ b/src/MakeApp.mk	2020-07-12 11:58:38.709883508 -0500
+@@ -57,7 +57,7 @@
+ 
+ .PHONY: test
+ test: $(TESTS)
+-	for test in $(TESTS); do echo $$test ; ./$$test ; done
++	for test in $(TESTS); do echo skipping $$test -- cross-compiling!; done
+ 
+ .PHONY: clean
+ clean:
+

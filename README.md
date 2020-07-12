@@ -6,6 +6,7 @@ PACKAGES
 
 spiped - https://github.com/Tarsnap/spiped
 dnscrypt-proxy-v2 - https://github.com/jedisct1/dnscrypt-proxy
+nethogs - https://github.com/raboof/nethogs
 
 spiped notes:
 
@@ -41,3 +42,9 @@ Any combination other than this will result in undefined behavior.
 Downloaded resolver lists and signature files are also copied to the /etc/dnscrypt-proxy configuration folder to preserve across restarts/reloads.
 
 Procd reload triggering is configured in /etc/config as a list with a default of "wan".
+
+nethogs notes:
+
+No package for nethogs was found, so this was created.  The package is simple and basic but installs and appears to work.
+
+The initial version committed is 0.8.6.  Caution may be warranted as this package installs an executable that will run as the user calling it -- if logged in as root, it will run as root.

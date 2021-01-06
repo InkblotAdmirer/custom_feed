@@ -22,6 +22,8 @@ Testing has consisted of tcpdump captures on each of the ports, and information 
 
 dnscrypt-proxy-v2 notes:
 
+As of 2.0.45 the nomenclature "blacklist" is removed from the source.  This package follows the convention and files named "blacklist" by default are now "blocklist" by default.  If upgrading, take note of config file changes (in /etc/config and the toml file).
+
 As of 2.0.39 Go is used to compile from source.  If not already installed, execute "./scripts/feeds install golang" from the OpenWRT source directory.
 
 Prior to version 2.0.39: The OpenWRT build system does not currently include the capability to cross-compile Go, so the precompiled ARM binary is downloaded and installed.

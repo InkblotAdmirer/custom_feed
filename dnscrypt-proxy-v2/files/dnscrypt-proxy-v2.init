@@ -17,7 +17,7 @@ GRP=nogroup
 
 dnscrypt_config() {
 
-	local address4 port4 address6 port6 log_file log_level cloaking_file blacklist bl_config bl_log bl_type bl_file bl_type
+	local address4 port4 address6 port6 log_file log_level cloaking_file blocklist bl_config bl_log bl_type bl_file bl_type
 	local syslog ephemeral_keys local_cache block_ipv6
 	local bl='0'
 	local block_unqualified block_undelegated fallback_resolvers skip_incompatible
@@ -29,7 +29,7 @@ dnscrypt_config() {
 	config_get		log_file			$1	'log_file'				''
 	config_get		log_level			$1	'log_level'				'6'
 	config_get		cloaking_file		$1	'cloaking_file'			''
-	config_get		blacklist			$1	'blacklist'				''
+	config_get		blocklist			$1	'blocklist'				''
 	config_get		block_unqualified	$1	'block_unqualified'		'1'	# 2.0.35
 	config_get		block_undelegated	$1	'block_undelegated'		'1'	# 2.0.36
 	config_get		fallback_resolvers	$1	'fallback_resolvers'	'[9.9.9.9:53],[8.8.8.8:53]'	# 2.0.38, unhandled for now
@@ -41,51 +41,51 @@ dnscrypt_config() {
 
 	[ -z "${address6}" ] && listen_string="['${address4}:${port4}']" || listen_string="['${address4}:${port4}', '${address6}:${port6}']"
 
-	BLACKLIST_DOMAINS=""
-	BLACKLIST_DLOG=""
-	BLACKLIST_IPS=""
-	BLACKLIST_IPLOG=""
+	BLOCKLIST_DOMAINS=""
+	BLOCKLIST_DLOG=""
+	BLOCKLIST_IPS=""
+	BLOCKLIST_IPLOG=""
 
-	[ -n "${blacklist}" ] && {
-		bl_config=$(echo "${blacklist}" | awk '{print $1}')
-		bl=$(echo $blacklist | wc -w)
+	[ -n "${blocklist}" ] && {
+		bl_config=$(echo "${blocklist}" | awk '{print $1}')
+		bl=$(echo $blocklist | wc -w)
 		case $bl in
 			"1")
-				[ "${bl_config%:*}" == "domains" ] && BLACKLIST_DOMAINS="${bl_config#*:}" || {
-					[ "${bl_config%:*}" == "ips" ] && BLACKLIST_IPS="${bl_config#*:}"
+				[ "${bl_config%:*}" == "domains" ] && BLOCKLIST_DOMAINS="${bl_config#*:}" || {
+					[ "${bl_config%:*}" == "ips" ] && BLOCKLIST_IPS="${bl_config#*:}"
 				}
 				;;
 			"2")
-				[ "${bl_config%:*}" == "domains" ] && BLACKLIST_DOMAINS="${bl_config#*:}" || {
-					[ "${bl_config%:*}" == "ips" ] && BLACKLIST_IPS="${bl_config#*:}"
+				[ "${bl_config%:*}" == "domains" ] && BLOCKLIST_DOMAINS="${bl_config#*:}" || {
+					[ "${bl_config%:*}" == "ips" ] && BLOCKLIST_IPS="${bl_config#*:}"
 				}
-				bl_type=$(echo "${blacklist}" | awk '{print $2}')
+				bl_type=$(echo "${blocklist}" | awk '{print $2}')
 				[ "${bl_type%:*}" == "logfile" ] && {
-					[ "${bl_config%:*}" == "domains" ] && BLACKLIST_DLOG="${bl_type#*:}" || {
-						[ "${bl_config%:*}" == "ips" ] && BLACKLIST_IPLOG="${bl_type#*:}"
+					[ "${bl_config%:*}" == "domains" ] && BLOCKLIST_DLOG="${bl_type#*:}" || {
+						[ "${bl_config%:*}" == "ips" ] && BLOCKLIST_IPLOG="${bl_type#*:}"
 					}
 				} || {
-					[ "${bl_type%:*}" == "domains" ] && BLACKLIST_DOMAINS="${bl_type#*:}" || {
-						[ "${bl_type%:*}" == "ips" ] && BLACKLIST_IPS="${bl_type#*:}"
+					[ "${bl_type%:*}" == "domains" ] && BLOCKLIST_DOMAINS="${bl_type#*:}" || {
+						[ "${bl_type%:*}" == "ips" ] && BLOCKLIST_IPS="${bl_type#*:}"
 					}
 				}
 				;;
 			"4")
-				bl_config=$(echo "${blacklist}" | awk '{print $1}')
-				[ "${bl_config%:*}" == "domains" ] && BLACKLIST_DOMAINS="${bl_config#*:}" || {
-						[ "${bl_config%:*}" == "ips" ] && BLACKLIST_IPS="${bl_config#*:}"
+				bl_config=$(echo "${blocklist}" | awk '{print $1}')
+				[ "${bl_config%:*}" == "domains" ] && BLOCKLIST_DOMAINS="${bl_config#*:}" || {
+						[ "${bl_config%:*}" == "ips" ] && BLOCKLIST_IPS="${bl_config#*:}"
 				}
-				bl_type=$(echo "${blacklist}" | awk '{print $2}')
-				[ "${bl_config%:*}" == "domains" ] && BLACKLIST_DLOG="${bl_type#*:}" || {
-					[ "${bl_config%:*}" == "ips" ] && BLACKLIST_IPLOG="${bl_type#*:}"
+				bl_type=$(echo "${blocklist}" | awk '{print $2}')
+				[ "${bl_config%:*}" == "domains" ] && BLOCKLIST_DLOG="${bl_type#*:}" || {
+					[ "${bl_config%:*}" == "ips" ] && BLOCKLIST_IPLOG="${bl_type#*:}"
 				}
-				bl_config=$(echo "${blacklist}" | awk '{print $3}')
-				[ "${bl_config%:*}" == "domains" ] && BLACKLIST_DOMAINS="${bl_config#*:}" || {
-						[ "${bl_config%:*}" == "ips" ] && BLACKLIST_IPS="${bl_config#*:}"
+				bl_config=$(echo "${blocklist}" | awk '{print $3}')
+				[ "${bl_config%:*}" == "domains" ] && BLOCKLIST_DOMAINS="${bl_config#*:}" || {
+						[ "${bl_config%:*}" == "ips" ] && BLOCKLIST_IPS="${bl_config#*:}"
 				}
-				bl_type=$(echo "${blacklist}" | awk '{print $4}')
-				[ "${bl_config%:*}" == "domains" ] && BLACKLIST_DLOG="${bl_type#*:}" || {
-					[ "${bl_config%:*}" == "ips" ] && BLACKLIST_IPLOG="${bl_type#*:}"
+				bl_type=$(echo "${blocklist}" | awk '{print $4}')
+				[ "${bl_config%:*}" == "domains" ] && BLOCKLIST_DLOG="${bl_type#*:}" || {
+					[ "${bl_config%:*}" == "ips" ] && BLOCKLIST_IPLOG="${bl_type#*:}"
 				}
 				;;
 		esac
@@ -99,18 +99,18 @@ dnscrypt_config() {
 			[ ! -f "${CFGLOC}/${CLOAKING_DOMAINS}" ] && cp "${CFGDIR}/${CLOAKING_DOMAINS}" "${CFGLOC}/${CLOAKING_DOMAINS}"
 			sed -i "/cloaking_rules/ c\cloaking_rules = '${CFGLOC}/${CLOAKING_DOMAINS}'" $CFGRUN
 		}
-		[ -f "${CFGDIR}/${BLACKLIST_DOMAINS}" ] && {
-			[ ! -f "${CFGLOC}/${BLACKLIST_DOMAINS}" ] && cp "${CFGDIR}/${BLACKLIST_DOMAINS}" "${CFGLOC}/${BLACKLIST_DOMAINS}"
-			cat "${CFGRUN}" | awk '{print (/blacklist_file/ && (++c==1) ? "  blacklist_file = '\'${CFGLOC}/${BLACKLIST_DOMAINS}\''" : $0)}' > /tmp/dnsc.working
+		[ -f "${CFGDIR}/${BLOCKLIST_DOMAINS}" ] && {
+			[ ! -f "${CFGLOC}/${BLOCKLIST_DOMAINS}" ] && cp "${CFGDIR}/${BLOCKLIST_DOMAINS}" "${CFGLOC}/${BLOCKLIST_DOMAINS}"
+			cat "${CFGRUN}" | awk '{print (/blocked_names_file/ && (++c==1) ? "  blocked_names_file = '\'${CFGLOC}/${BLOCKLIST_DOMAINS}\''" : $0)}' > /tmp/dnsc.working
 			mv /tmp/dnsc.working "${CFGRUN}"
-			cat "${CFGRUN}" | awk '{print (/log_file = / && (++c==2) ? "  log_file = '\'${BLACKLIST_DLOG}\''" : $0)}' > /tmp/dnsc.working
+			cat "${CFGRUN}" | awk '{print (/log_file = / && (++c==2) ? "  log_file = '\'${BLOCKLIST_DLOG}\''" : $0)}' > /tmp/dnsc.working
 			mv /tmp/dnsc.working "${CFGRUN}"
 		}
-		[ -f "${CFGDIR}/${BLACKLIST_IPS}" ] && {
-			[ ! -f "${CFGLOC}/${BLACKLIST_IPS}" ] && cp "${CFGDIR}/${BLACKLIST_IPS}" "${CFGLOC}/${BLACKLIST_IPS}"
-			cat "${CFGRUN}" | awk '{print (/blacklist_file/ && (++c==2) ? "  blacklist_file = '\'${CFGLOC}/${BLACKLIST_IPS}\''" : $0)}' > /tmp/dnsc.working
+		[ -f "${CFGDIR}/${BLOCKLIST_IPS}" ] && {
+			[ ! -f "${CFGLOC}/${BLOCKLIST_IPS}" ] && cp "${CFGDIR}/${BLOCKLIST_IPS}" "${CFGLOC}/${BLOCKLIST_IPS}"
+			cat "${CFGRUN}" | awk '{print (/blocked_ips_file/ && (++c==1) ? "  blocked_ips_file = '\'${CFGLOC}/${BLOCKLIST_IPS}\''" : $0)}' > /tmp/dnsc.working
 			mv /tmp/dnsc.working "${CFGRUN}"
-			cat "${CFGRUN}" | awk '{print (/log_file = / && (++c==3) ? "  log_file = '\'${BLACKLIST_IPLOG}\''" : $0)}' > /tmp/dnsc.working
+			cat "${CFGRUN}" | awk '{print (/log_file = / && (++c==3) ? "  log_file = '\'${BLOCKLIST_IPLOG}\''" : $0)}' > /tmp/dnsc.working
 			mv /tmp/dnsc.working "${CFGRUN}"
 		}
 		[ -f "${CFGDIR/public-resolvers.md}" ] && {
@@ -190,8 +190,8 @@ dnscrypt_config() {
 	}
 	# End of upgrade section
 
-	touch $CFGLOC/$BLACKLIST_DOMAINS $CFGLOC/$BLACKLIST_IPS $CFGLOC/$CLOAKING_DOMAINS
-	chmod 644 $CFGLOC/$BLACKLIST_DOMAINS $CFGLOC/$BLACKLIST_IPS $CFGLOC/$CLOAKING_DOMAINS "${CFGRUN}"
+	touch $CFGLOC/$BLOCKLIST_DOMAINS $CFGLOC/$BLOCKLIST_IPS $CFGLOC/$CLOAKING_DOMAINS
+	chmod 644 $CFGLOC/$BLOCKLIST_DOMAINS $CFGLOC/$BLOCKLIST_IPS $CFGLOC/$CLOAKING_DOMAINS "${CFGRUN}"
 }
 
 boot()
@@ -236,7 +236,7 @@ start_service() {
 
 stop_service() {
 
-	local copylist="$CFGLOC/*cloaking* $CFGLOC/*blacklist* $CFGLOC/public*"
+	local copylist="$CFGLOC/*cloaking* $CFGLOC/*blocklist* $CFGLOC/public*"
 
 	[ -d $CFGDIR ] && {
 		for cl in $copylist

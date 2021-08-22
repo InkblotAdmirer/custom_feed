@@ -1,6 +1,8 @@
 #!/bin/sh /etc/rc.common
 
-START=30
+# start before dnsmasq, stop before networking
+START=18
+STOP=89
 
 USE_PROCD=1
 NAME=dnscrypt-proxy
@@ -33,6 +35,7 @@ dnscrypt_config() {
 	config_get		block_unqualified	$1	'block_unqualified'		'1'	# 2.0.35
 	config_get		block_undelegated	$1	'block_undelegated'		'1'	# 2.0.36
 	config_get		fallback_resolvers	$1	'fallback_resolvers'	'[9.9.9.9:53],[8.8.8.8:53]'	# 2.0.38, unhandled for now
+	config_get		bootstrap_resolvers	$1	'bootstrap_resolvers'	'[9.9.9.9:53],[8.8.8.8:53]'	# 2.1.0
 	config_get		skip_incompatible	$1	'skip_incompatible'		'0'	# 2.0.42
 	config_get_bool	syslog				$1	'syslog'				'1'
 	config_get_bool	ephemeral_keys		$1	'ephemeral_keys'		'0'
@@ -165,9 +168,13 @@ dnscrypt_config() {
 		sed -i "/block_undelegated/ c\block_undelegated = false" $CFGRUN
 	}
 
+	# 2.1.0 bootstrap_resolvers replaces fallback_resolvers
 	# 2.0.38: fallback_resolvers (default ['9.9.9.9:53','8.8.8.8:53'])
 	#   optional, so add as comment
-	grep "fallback_resolvers" $CFGRUN > /dev/null 2>&1 || {  # add required configuration to toml
+	grep "fallback_resolvers" $CFGRUN > /dev/null 2>&1 && { # convert to "bootstrap_resolvers" # 2.1.0
+		sed -i "/fallback_resolvers/bootstrap_resolvers/g" $CFGRUN	# add after fallback_resolver
+		logger -t $NAME "Warning: fallback_resolvers converted to bootstrap_resolvers in ${CFGRUN}... be sure to modify config/toml files!"
+	} || {  # add required configuration to toml
 		T1="#fallback_resolvers = ['9.9.9.9:53','8.8.8.8:53']"
 		sed -i "/fallback_resolver/a ${T1}\n" $CFGRUN	# add after fallback_resolver
 		logger -t $NAME "Warning: fallback_resolvers added to ${CFGRUN}! (commented out)"
@@ -229,7 +236,7 @@ start_service() {
 	[ $USER == "root" ] && logger -t $NAME "Warning: ${NAME} running as root!"
 
 	procd_set_param user $USER
-	procd_set_param respawn
+	procd_set_param respawn ${respawn_threshold:-3600} ${respawn_timeout:-5} ${respawn_retry:-5}
 
 	procd_close_instance
 }

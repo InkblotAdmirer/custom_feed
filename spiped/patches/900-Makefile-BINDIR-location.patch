@@ -1,21 +1,20 @@
 --- a/Makefile
 +++ b/Makefile
-@@ -4,7 +4,7 @@
- TESTS=		tests/dnsthread-resolve tests/nc-client tests/nc-server	\
- 		tests/pushbits tests/valgrind				\
- 		perftests/recv-zeros perftests/send-zeros
+@@ -11,7 +11,7 @@
+ 	tests/pthread_create_blocking_np	\
+ 	tests/pushbits				\
+ 	tests/valgrind
 -BINDIR_DEFAULT=	/usr/local/bin
 +BINDIR_DEFAULT=	../ipkg-install/usr/sbin
  CFLAGS_DEFAULT=	-O2
  LIBCPERCIVA_DIR=	libcperciva
  TEST_CMD=	tests/test_spiped.sh
-@@ -12,7 +12,7 @@
+@@ -19,7 +19,7 @@
  ### Shared code between Tarsnap projects.
  
- all:	cflags-filter.sh cpusupport-config.h posix-flags.sh
+ all:	toplevel
 -	export CFLAGS="$${CFLAGS:-${CFLAGS_DEFAULT}}";	\
-+	CFLAGS="$${CFLAGS:-${CFLAGS_DEFAULT}}";	export CFLAGS; \
++	CFLAGS="$${CFLAGS:-${CFLAGS_DEFAULT}}"; export CFLAGS; \
  	. ./posix-flags.sh;				\
  	. ./cpusupport-config.h;			\
  	. ./cflags-filter.sh;				\
-

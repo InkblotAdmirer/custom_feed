@@ -9,9 +9,9 @@
  CFLAGS_DEFAULT=	-O2
  LIBCPERCIVA_DIR=	libcperciva
  TEST_CMD=	tests/test_spiped.sh
-@@ -19,7 +19,7 @@
- ### Shared code between Tarsnap projects.
+@@ -24,7 +24,7 @@
  
+ .PHONY: all
  all:	toplevel
 -	export CFLAGS="$${CFLAGS:-${CFLAGS_DEFAULT}}";	\
 +	CFLAGS="$${CFLAGS:-${CFLAGS_DEFAULT}}"; export CFLAGS; \
